@@ -78,15 +78,16 @@ func (e *ExcelGenerator) GenerateExcelFile(stocks []StockData) error {
 		f.SetCellValue(sheetName, cell, header)
 	}
 
+	// Write stock data row by row
 	for i, stock := range stocks {
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", i+2), stock.Ticker)
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", i+2), stock.TickerName)
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", i+2), stock.LatestPrice)
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", i+2), stock.PointsChange)
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", i+2), stock.PercentageChange)
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", i+2), stock.TradedOfMktCap)
+		row := i + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), stock.Ticker)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), stock.TickerName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), stock.LatestPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), stock.PointsChange)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), stock.PercentageChange)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), stock.TradedOfMktCap)
 	}
-
 	if err := os.MkdirAll(filepath.Dir(e.filePath), os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
