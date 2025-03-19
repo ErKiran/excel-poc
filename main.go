@@ -70,24 +70,44 @@ func NewExcelGenerator(directory, filename string) *ExcelGenerator {
 
 func (e *ExcelGenerator) GenerateExcelFile(stocks []StockData) error {
 	f := excelize.NewFile()
-	f.SetSheetName("Sheet1", sheetName)
 
-	headers := []string{"Ticker", "Ticker Name", "Latest Price", "Points Change", "Percentage Change", "Traded Of Mkt Cap"}
-	for col, header := range headers {
-		cell := fmt.Sprintf("%c1", 'A'+col)
-		f.SetCellValue(sheetName, cell, header)
+	// Rename the default sheet to the desired sheet name
+	defaultSheetName := f.GetSheetName(0) // Get the name of the first sheet
+	if defaultSheetName != sheetName {
+		f.SetSheetName(defaultSheetName, sheetName)
 	}
 
-	// Write stock data row by row
+	// Create a stream writer for the sheet
+	streamWriter, err := f.NewStreamWriter(sheetName)
+	if err != nil {
+		return fmt.Errorf("failed to create stream writer: %w", err)
+	}
+
+	headers := []interface{}{"Ticker", "Ticker Name", "Latest Price", "Points Change", "Percentage Change", "Traded Of Mkt Cap"}
+	if err := streamWriter.SetRow("A1", headers); err != nil {
+		return fmt.Errorf("failed to write headers: %w", err)
+	}
+
 	for i, stock := range stocks {
-		row := i + 2
-		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), stock.Ticker)
-		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), stock.TickerName)
-		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), stock.LatestPrice)
-		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), stock.PointsChange)
-		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), stock.PercentageChange)
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), stock.TradedOfMktCap)
+		row := i + 2 // Start from the second row
+		cell := fmt.Sprintf("A%d", row)
+		rowData := []interface{}{
+			stock.Ticker,
+			stock.TickerName,
+			stock.LatestPrice,
+			stock.PointsChange,
+			stock.PercentageChange,
+			stock.TradedOfMktCap,
+		}
+		if err := streamWriter.SetRow(cell, rowData); err != nil {
+			return fmt.Errorf("failed to write row %d: %w", row, err)
+		}
 	}
+
+	if err := streamWriter.Flush(); err != nil {
+		return fmt.Errorf("failed to flush stream writer: %w", err)
+	}
+
 	if err := os.MkdirAll(filepath.Dir(e.filePath), os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
